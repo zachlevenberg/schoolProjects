@@ -18,19 +18,21 @@
 #include "Adc.h"
 
 // **** Set any macros or preprocessor directives here ****
-
+#define LINES_PER_SCREEN 4
 // **** Declare any data types here ****
 
 // **** Define any global or external variables here ****
 
 static uint8_t buttonEvent = 0;
 static uint16_t adcValue = 0;
+static bool oneHundHzFlag = 0;
+
+
 static char title[GAME_MAX_ROOM_TITLE_LENGTH];
 static char desc[GAME_MAX_ROOM_DESC_LENGTH];
-static char oledScreen[GAME_MAX_ROOM_TITLE_LENGTH + 3*(OLED_CHARS_PER_LINE + 1)];
-static char oledScreenFormat1[] = "%s\n\n\n%s";
+static char oledScreen[GAME_MAX_ROOM_TITLE_LENGTH + 3 * (OLED_CHARS_PER_LINE + 1)];
+static char oledScreenFormat1[] = "%s\n%s";
 static char oledScreenFormat2[] = "%s";
-static bool oneHundHzFlag = 0;
 
 // **** Declare any function prototypes here ****
 void UpdateAll(void);
@@ -87,58 +89,65 @@ int main()
     INTSetVectorSubPriority(INT_TIMER_2_VECTOR, INT_SUB_PRIORITY_LEVEL_0);
     INTEnable(INT_T2, INT_ENABLED);
 
-/******************************** Your custom code goes below here ********************************/
-ButtonsInit();
-OledInit();
-LEDS_INIT();
-GameInit();
-AdcInit();
+    /******************************** Your custom code goes below here ********************************/
+    ButtonsInit();
+    OledInit();
+    LEDS_INIT();
+    AdcInit();
 
-UpdateAll();
-Scroll();
-
-while(1){
-    if(AdcChanged() && oneHundHzFlag){
-        oneHundHzFlag = 0;
-        adcValue = AdcRead();
-        Scroll();
+    if (!GameInit()) {
+        FATAL_ERROR();
     }
 
-if(buttonEvent & BUTTON_EVENT_4UP){
-    buttonEvent &= ~BUTTON_EVENT_4UP;
-    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_NORTH_EXISTS){
-        GameGoNorth();
-        UpdateAll();
+    UpdateAll();
+    Scroll();
+
+    while (1) {
+
+        //ADC events
+        if (AdcChanged() && oneHundHzFlag) {
+            oneHundHzFlag = 0;
+            adcValue = AdcRead();
+            Scroll();
+        }
+
+        //BUTTON 4 Event
+        if (buttonEvent & BUTTON_EVENT_4UP) {
+            buttonEvent &= ~BUTTON_EVENT_4UP;
+            if (GameGetCurrentRoomExits() & GAME_ROOM_EXIT_NORTH_EXISTS) {
+                GameGoNorth();
+                UpdateAll();
+            }
+        }
+
+        //BUTTON 3 Event
+        if (buttonEvent & BUTTON_EVENT_3UP) {
+            buttonEvent &= ~BUTTON_EVENT_3UP;
+            if (GameGetCurrentRoomExits() & GAME_ROOM_EXIT_EAST_EXISTS) {
+                GameGoEast();
+                UpdateAll();
+            }
+        }
+
+        //BUTTON 2 Event
+        if (buttonEvent & BUTTON_EVENT_2UP) {
+            buttonEvent &= ~BUTTON_EVENT_2UP;
+            if (GameGetCurrentRoomExits() & GAME_ROOM_EXIT_SOUTH_EXISTS) {
+                GameGoSouth();
+                UpdateAll();
+            }
+        }
+
+        //BUTTON 1 Event
+        if (buttonEvent & BUTTON_EVENT_1UP) {
+            buttonEvent &= ~BUTTON_EVENT_1UP;
+            if (GameGetCurrentRoomExits() & GAME_ROOM_EXIT_WEST_EXISTS) {
+                GameGoWest();
+                UpdateAll();
+            }
+        }
     }
-}
-
-if(buttonEvent & BUTTON_EVENT_3UP){
-    buttonEvent &= ~BUTTON_EVENT_3UP;
-    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_EAST_EXISTS){
-        GameGoEast();
-        UpdateAll();
-    }
-}
-
-if(buttonEvent & BUTTON_EVENT_2UP){
-    buttonEvent &= ~BUTTON_EVENT_2UP;
-    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_SOUTH_EXISTS){
-        GameGoSouth();
-        UpdateAll();
-    }
-}
-
-if(buttonEvent & BUTTON_EVENT_1UP){
-    buttonEvent &= ~BUTTON_EVENT_1UP;
-    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_WEST_EXISTS){
-        GameGoWest();
-        UpdateAll();
-    }
-}
-
-}
-
-/**************************************************************************************************/
+    /**************************************************************************************************/
     while (1);
 }
 
@@ -149,7 +158,7 @@ void __ISR(_TIMER_2_VECTOR, ipl4) TimerInterrupt100Hz(void)
 {
     static int count = 0;
     count++;
-    if(count == 50){
+    if (count == 24) {
         oneHundHzFlag = 1;
         count = 0;
     }
@@ -160,28 +169,35 @@ void __ISR(_TIMER_2_VECTOR, ipl4) TimerInterrupt100Hz(void)
 
 void UpdateAll(void)
 {
-        GameGetCurrentRoomTitle(title);
-        GameGetCurrentRoomDescription(desc);
-        sprintf(oledScreen, oledScreenFormat1, title, desc);
-        OledClear(OLED_COLOR_BLACK);
-        OledDrawString(oledScreen);
-        OledUpdate();
-        LEDS_SET(GameGetCurrentRoomExits());
+    GameGetCurrentRoomTitle(title);
+    GameGetCurrentRoomDescription(desc);
+    sprintf(oledScreen, oledScreenFormat1, title, desc);
+    OledClear(OLED_COLOR_BLACK);
+    OledDrawString(oledScreen);
+    OledUpdate();
+    LEDS_SET(GameGetCurrentRoomExits());
 }
 
 void Scroll(void)
 {
     int length = strlen(desc);
-    int numberOfScreens = ((((length - OLED_CHARS_PER_LINE) / OLED_CHARS_PER_LINE) / 4) + 2);
-    int percent = (adcValue * 100) / 1023;
+    int numberOfScreens = (((length / OLED_CHARS_PER_LINE) + 1) / LINES_PER_SCREEN) + 1;
+    int percent = (adcValue * 100) / ADC_MAX_VALUE;
     int screenNumber = (1 + (percent * numberOfScreens) / 100);
     if (screenNumber <= 1) {
-        sprintf(oledScreen, oledScreenFormat1, title, desc);
-    } else {
-        char descLine[(OLED_CHARS_PER_LINE*4) + 1];
+        char descLine[(OLED_CHARS_PER_LINE * (LINES_PER_SCREEN - 1)) + 1];
         int i = 0;
-        for (i = 0; i <= OLED_CHARS_PER_LINE*4; i++) {
-            descLine[i] = desc[i + OLED_CHARS_PER_LINE*(1 + 4*(screenNumber - 2))];
+        for (i = 0; i <= OLED_CHARS_PER_LINE * (LINES_PER_SCREEN - 1); i++) {
+            descLine[i] = desc[i];
+        }
+        descLine[i] = NULL;
+        sprintf(oledScreen, oledScreenFormat1, title, descLine);
+    } else {
+        char descLine[(OLED_CHARS_PER_LINE * LINES_PER_SCREEN) + 1];
+        int i = 0;
+        for (i = 0; i <= OLED_CHARS_PER_LINE * LINES_PER_SCREEN; i++) {
+            descLine[i] = desc[i + OLED_CHARS_PER_LINE *
+                    (LINES_PER_SCREEN * (screenNumber - 1) - 1)];
         }
         descLine[i] = NULL;
         sprintf(oledScreen, oledScreenFormat2, descLine);

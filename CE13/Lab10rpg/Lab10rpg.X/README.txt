@@ -1,0 +1,7 @@
+Zachary Levenberg. Working alone.
+
+In this lab, we were to use interrupts and event driven programming to create programs that would react at precise time intervals. While this code could easily have been written with a very basic knowledge of C, it would be impossible to tell if each event would occur on time. In the real world of computing, there are other processes that are going on and often time control is momentarily taken from our program and handed back many clock cycles later. The idea of using hardware interrupts allows for certain aspects of our program to happen exactly when we specify them. By using a timer interrupt, we can set our conditions on time every time, regardless of what line the normal program is on.
+ 
+My approach to this lab started the same as any other, read the manual through two or three times. The first thing I did was create the player.c library and then the game.c library. Next I came up with an algorithm to parse each text file and created a function to get all info for any specific given direction. Last, I implemented the event loop, which by now, was incredibly easy.
+
+Overall, this was one of the easiest labs. I completed it from start to finish in less than 6 hours, including a lunch break. This was a very worthwhile lab, but it maybe could have used a little more about file reading, including different types of files, which is something I would like to learn more about.
