@@ -1,4 +1,4 @@
-build/default/production/Game.o:  \
+build/default/debug/Game.o:  \
 Game.c  \
 Game.h  \
 Common.h  \

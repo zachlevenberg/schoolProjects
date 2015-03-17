@@ -13,6 +13,7 @@
       <itemPath>Oled.h</itemPath>
       <itemPath>OledDriver.h</itemPath>
       <itemPath>Player.h</itemPath>
+      <itemPath>Leds.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -130,7 +131,7 @@
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-cross-reference-file" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
-        <property key="heap-size" value="2800"/>
+        <property key="heap-size" value="12000"/>
         <property key="input-libraries" value=""/>
         <property key="linker-symbols" value=""/>
         <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>

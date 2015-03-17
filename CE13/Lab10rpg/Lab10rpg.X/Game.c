@@ -1,10 +1,11 @@
 #include "Game.h"
 #include "Common.h"
 #include "Player.h"
+#include "HardwareDefs.h"
 #include <stdio.h>
 #include <string.h>
 
-#define ROOM_TEMPLATE "/room%d.txt"
+#define ROOM_TEMPLATE "/room%02d.txt"
 
 static struct _FILEDATA {
     char title[GAME_MAX_ROOM_TITLE_LENGTH];
@@ -14,6 +15,8 @@ static struct _FILEDATA {
     uint8_t nextRoomSouth;
     uint8_t nextRoomWest;
 } thisFile;
+
+void GameGetInfo(int roomNumber);
 
 // The initial room that Game should initialize to.
 //#define STARTING_ROOM 32
@@ -54,66 +57,14 @@ int GameGoNorth(void)
         return STANDARD_ERROR;
     }
 
-    //create text file name and open it
-    char fileName[10];
-    char input;
-    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomNorth);
-    FILE *fp;
-    fp = fopen(fileName, "r");
-
-    //get title
-    input = fgetc(fp);
-    int i = 0;
-    for (i = 0; i < input; i++) {
-        thisFile.desc[i] = fgetc(fp);
-    }
-    thisFile.desc[i + 1] = NULL;
-
-    bool fail = false;
-    while (1) {
-        //get item reqs
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if (!FindInInventory(item)) {
-                fail = true;
-            }
-        }
-        //if we fail, seek and try again.
-        if (fail) {
-            input = fgetc(fp);
-            fseek(fp, input, SEEK_CUR);
-            input = fgetc(fp);
-            fseek(fp, input + 4, SEEK_CUR);
-            fail = false;
-            continue;
-        }
-
-        //get description
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            thisFile.desc[i] = fgetc(fp);
-        }
-        thisFile.desc[i + 1] = NULL;
-
-        //get items contained
-        input = fgetc(fp);
-        for(i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if(!FindInInventory(item)) {
-                AddToInventory(item);
-            }
-        }
-
-        //get Exits
-        thisFile.nextRoomNorth = fgetc(fp);
-        thisFile.nextRoomEast = fgetc(fp);
-        thisFile.nextRoomSouth = fgetc(fp);
-        thisFile.nextRoomWest = fgetc(fp);
-
-        break;
-    }
-    fclose(fp);
+    GameGetInfo(thisFile.nextRoomNorth);
+//    //create text file name and open it
+//    char fileName[10];
+//    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomNorth);
+//    FILE *fp;
+//    fp = fopen(fileName, "r");
+//    GameGetInfo(fp);
+//    fclose(fp);
     return SUCCESS;
 }
 
@@ -127,67 +78,14 @@ int GameGoEast(void)
         return STANDARD_ERROR;
     }
 
-    //create text file name and open it
-    char fileName[10];
-    char input;
-    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomEast);
-    FILE *fp;
-    fp = fopen(fileName, "r");
-
-    //get title
-    input = fgetc(fp);
-    int i = 0;
-    for (i = 0; i < input; i++) {
-        thisFile.desc[i] = fgetc(fp);
-
-    }
-    thisFile.desc[i + 1] = NULL;
-
-    bool fail = false;
-    while (1) {
-        //get item reqs
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if (!FindInInventory(item)) {
-                fail = true;
-            }
-        }
-        //if we fail, seek and try again.
-        if (fail) {
-            input = fgetc(fp);
-            fseek(fp, input, SEEK_CUR);
-            input = fgetc(fp);
-            fseek(fp, input + 4, SEEK_CUR);
-            fail = false;
-            continue;
-        }
-
-        //get description
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            thisFile.desc[i] = fgetc(fp);
-        }
-        thisFile.desc[i + 1] = NULL;
-
-        //get items contained
-        input = fgetc(fp);
-        for(i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if(!FindInInventory(item)) {
-                AddToInventory(item);
-            }
-        }
-
-        //get Exits
-        thisFile.nextRoomNorth = fgetc(fp);
-        thisFile.nextRoomEast = fgetc(fp);
-        thisFile.nextRoomSouth = fgetc(fp);
-        thisFile.nextRoomWest = fgetc(fp);
-
-        break;
-    }
-    fclose(fp);
+    GameGetInfo(thisFile.nextRoomEast);
+//    //create text file name and open it
+//    char fileName[10];
+//    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomEast);
+//    FILE *fp;
+//    fp = fopen(fileName, "r");
+//    GameGetInfo(fp);
+//    fclose(fp);
     return SUCCESS;
 }
 
@@ -201,66 +99,17 @@ int GameGoSouth(void)
         return STANDARD_ERROR;
     }
 
-    //create text file name and open it
-    char fileName[10];
-    char input;
-    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomSouth);
-    FILE *fp;
-    fp = fopen(fileName, "r");
+    GameGetInfo(thisFile.nextRoomSouth);
 
-    //get title
-    input = fgetc(fp);
-    int i = 0;
-    for (i = 0; i < input; i++) {
-        thisFile.desc[i] = fgetc(fp);
-    }
-    thisFile.desc[i + 1] = NULL;
+//    //create text file name and open it
+//    char fileName[11];
+//    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomSouth);
+//    FILE *fpS;
+//    fpS = fopen(fileName, "r");
+//    GameGetInfo(fpS);
+//    fclose(fpS);
 
-    bool fail = false;
-    while (1) {
-        //get item reqs
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if (!FindInInventory(item)) {
-                fail = true;
-            }
-        }
-        //if we fail, seek and try again.
-        if (fail) {
-            input = fgetc(fp);
-            fseek(fp, input, SEEK_CUR);
-            input = fgetc(fp);
-            fseek(fp, input + 4, SEEK_CUR);
-            fail = false;
-            continue;
-        }
 
-        //get description
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            thisFile.desc[i] = fgetc(fp);
-        }
-        thisFile.desc[i + 1] = NULL;
-
-        //get items contained
-        input = fgetc(fp);
-        for(i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if(!FindInInventory(item)) {
-                AddToInventory(item);
-            }
-        }
-
-        //get Exits
-        thisFile.nextRoomNorth = fgetc(fp);
-        thisFile.nextRoomEast = fgetc(fp);
-        thisFile.nextRoomSouth = fgetc(fp);
-        thisFile.nextRoomWest = fgetc(fp);
-
-        break;
-    }
-    fclose(fp);
     return SUCCESS;
 }
 
@@ -274,66 +123,15 @@ int GameGoWest(void)
         return STANDARD_ERROR;
     }
 
-    //create text file name and open it
-    char fileName[10];
-    char input;
-    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomWest);
-    FILE *fp;
-    fp = fopen(fileName, "r");
-
-    //get title
-    input = fgetc(fp);
-    int i = 0;
-    for (i = 0; i < input; i++) {
-        thisFile.desc[i] = fgetc(fp);
-    }
-    thisFile.desc[i + 1] = NULL;
-
-    bool fail = false;
-    while (1) {
-        //get item reqs
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if (!FindInInventory(item)) {
-                fail = true;
-            }
-        }
-        //if we fail, seek and try again.
-        if (fail) {
-            input = fgetc(fp);
-            fseek(fp, input, SEEK_CUR);
-            input = fgetc(fp);
-            fseek(fp, input + 4, SEEK_CUR);
-            fail = false;
-            continue;
-        }
-
-        //get description
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            thisFile.desc[i] = fgetc(fp);
-        }
-        thisFile.desc[i + 1] = NULL;
-
-        //get items contained
-        input = fgetc(fp);
-        for(i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if(!FindInInventory(item)) {
-                AddToInventory(item);
-            }
-        }
-
-        //get Exits
-        thisFile.nextRoomNorth = fgetc(fp);
-        thisFile.nextRoomEast = fgetc(fp);
-        thisFile.nextRoomSouth = fgetc(fp);
-        thisFile.nextRoomWest = fgetc(fp);
-
-        break;
-    }
-    fclose(fp);
+    GameGetInfo(thisFile.nextRoomWest);
+//    //create text file name and open it
+//    char fileName[10];
+//
+//    sprintf(fileName, ROOM_TEMPLATE, thisFile.nextRoomWest);
+//    FILE *fp;
+//    fp = fopen(fileName, "r");
+//    GameGetInfo(fp);
+//    fclose(fp);
     return SUCCESS;
 }
 
@@ -346,65 +144,10 @@ int GameGoWest(void)
 int GameInit(void)
 {
  //create text file name and open it
-    char fileName[10];
-    char input;
-    sprintf(fileName, ROOM_TEMPLATE, STARTING_ROOM);
-    FILE *fp;
-    fp = fopen(fileName, "r");
 
-    //get title
-    input = fgetc(fp);
-    int i = 0;
-    for (i = 0; i < input; i++) {
-        thisFile.desc[i] = fgetc(fp);
-    }
-    thisFile.desc[i + 1] = NULL;
-
-    bool fail = false;
-    while (1) {
-        //get item reqs
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if (!FindInInventory(item)) {
-                fail = true;
-            }
-        }
-        //if we fail, seek and try again.
-        if (fail) {
-            input = fgetc(fp);
-            fseek(fp, input, SEEK_CUR);
-            input = fgetc(fp);
-            fseek(fp, input + 4, SEEK_CUR);
-            fail = false;
-            continue;
-        }
-
-        //get description
-        input = fgetc(fp);
-        for (i = 0; i < input; i++) {
-            thisFile.desc[i] = fgetc(fp);
-        }
-        thisFile.desc[i + 1] = NULL;
-
-        //get items contained
-        input = fgetc(fp);
-        for(i = 0; i < input; i++) {
-            uint8_t item = fgetc(fp);
-            if(!FindInInventory(item)) {
-                AddToInventory(item);
-            }
-        }
-
-        //get Exits
-        thisFile.nextRoomNorth = fgetc(fp);
-        thisFile.nextRoomEast = fgetc(fp);
-        thisFile.nextRoomSouth = fgetc(fp);
-        thisFile.nextRoomWest = fgetc(fp);
-
-        break;
-    }
-    fclose(fp);
+    GameGetInfo(STARTING_ROOM);
+    
+    
     return SUCCESS;
 
 }
@@ -425,8 +168,9 @@ int GameGetCurrentRoomTitle(char *title)
     int i = 0;
     while(thisFile.title[i] != NULL) {
         title[i] = thisFile.title[i];
+        i++;
     }
-    title[i + 1] = NULL;
+    title[i] = NULL;
     return strlen(title);
 }
 
@@ -446,8 +190,9 @@ int GameGetCurrentRoomDescription(char *desc)
     int i = 0;
     while(thisFile.desc[i] != NULL) {
         desc[i] = thisFile.desc[i];
+        i++;
     }
-    desc[i + 1] = NULL;
+    desc[i] = NULL;
     return strlen(desc);
 }
 
@@ -481,4 +226,84 @@ uint8_t GameGetCurrentRoomExits(void)
         temp |= GAME_ROOM_EXIT_WEST_EXISTS;
     }
     return temp;
+}
+
+void GameGetInfo(int roomNumber)
+{
+    char fileName[12];
+    sprintf(fileName, ROOM_TEMPLATE, roomNumber);
+    FILE *fp;
+//    fp = fopen(fileName, "r");
+//    while(fgetc(fp) != EOF){
+//        continue;
+//    }
+//    fclose(fp);
+    fp = fopen(fileName, "r");
+    //fp->_cnt = 0;
+
+//    char testString[300];
+//    fread(testString, 299, 1, fp);
+
+
+    uint8_t input;
+    bool badInput = false;
+
+    //get title
+    input = fgetc(fp);
+    //if(input == 0x45){input = 0x0c;}
+    int i = 0;
+    for (i = 0; i < input; i++) {
+        thisFile.title[i] = fgetc(fp);
+    }
+    thisFile.title[i] = NULL;
+
+    bool fail = false;
+    while (1) {
+
+        badInput = false;
+
+        for (i = 0; i < input; i++) {
+            uint8_t item = fgetc(fp);
+            if (!FindInInventory(item)) {
+                fail = true;
+            }
+        }
+        //if we fail, seek and try again.
+        if (fail) {
+            input = fgetc(fp);
+            fseek(fp, input, SEEK_CUR);
+            input = fgetc(fp);
+            fseek(fp, input + 4, SEEK_CUR);
+            fail = false;
+            continue;
+        }
+
+        //get description
+        input = fgetc(fp);
+        for (i = 0; i < input; i++) {
+            thisFile.desc[i] = fgetc(fp);
+        }
+        thisFile.desc[i] = NULL;
+
+        //get items contained
+        input = fgetc(fp);
+        for(i = 0; i < input; i++) {
+            uint8_t item = fgetc(fp);
+            if(!FindInInventory(item)) {
+                AddToInventory(item);
+            }
+        }
+
+        //get Exits
+        thisFile.nextRoomNorth = fgetc(fp);
+        thisFile.nextRoomEast = fgetc(fp);
+        thisFile.nextRoomSouth = fgetc(fp);
+        thisFile.nextRoomWest = fgetc(fp);
+    
+        break;
+    }
+    
+    if(fclose(fp) != 0){
+        FATAL_ERROR();
+    }
 }

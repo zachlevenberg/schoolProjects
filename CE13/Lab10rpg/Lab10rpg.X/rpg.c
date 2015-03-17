@@ -11,6 +11,11 @@
 
 // User libraries
 #include "HardwareDefs.h"
+#include "Oled.h"
+#include "Buttons.h"
+#include "Game.h"
+#include "Leds.h"
+#include "Adc.h"
 
 // **** Set any macros or preprocessor directives here ****
 
@@ -18,8 +23,16 @@
 
 // **** Define any global or external variables here ****
 
-// **** Declare any function prototypes here ****
+static uint8_t buttonEvent = 0;
+static uint16_t adcValue = 0;
+static char title[GAME_MAX_ROOM_TITLE_LENGTH];
+static char desc[GAME_MAX_ROOM_DESC_LENGTH];
+static char oledScreen[GAME_MAX_ROOM_TITLE_LENGTH + 3*(OLED_CHARS_PER_LINE + 1)];
+static char oledScreenFormat1[] = "%s\n\n\n%s";
+static char oledScreenFormat2[] = "%s";
 
+// **** Declare any function prototypes here ****
+void UpdateAll(void);
 // Configuration Bit settings
 // SYSCLK = 80 MHz (8MHz Crystal/ FPLLIDIV * FPLLMUL / FPLLODIV)
 // PBCLK = 20 MHz
@@ -73,8 +86,56 @@ int main()
     INTEnable(INT_T2, INT_ENABLED);
 
 /******************************** Your custom code goes below here ********************************/
+ButtonsInit();
+OledInit();
+LEDS_INIT();
+GameInit();
+AdcInit();
+
+GameGetCurrentRoomTitle(title);
+GameGetCurrentRoomDescription(desc);
+desc[OLED_CHARS_PER_LINE] = NULL;
+sprintf(oledScreen, oledScreenFormat1, title, desc);
+OledDrawString(oledScreen);
+OledUpdate();
+LEDS_SET(GameGetCurrentRoomExits());
+
+while(1){
 
 
+if(buttonEvent & BUTTON_EVENT_4UP){
+    buttonEvent &= ~BUTTON_EVENT_4UP;
+    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_NORTH_EXISTS){
+        GameGoNorth();
+        UpdateAll();
+    }
+}
+
+if(buttonEvent & BUTTON_EVENT_3UP){
+    buttonEvent &= ~BUTTON_EVENT_3UP;
+    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_EAST_EXISTS){
+        GameGoEast();
+        UpdateAll();
+    }
+}
+
+if(buttonEvent & BUTTON_EVENT_2UP){
+    buttonEvent &= ~BUTTON_EVENT_2UP;
+    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_SOUTH_EXISTS){
+        GameGoSouth();
+        UpdateAll();
+    }
+}
+
+if(buttonEvent & BUTTON_EVENT_1UP){
+    buttonEvent &= ~BUTTON_EVENT_1UP;
+    if(GameGetCurrentRoomExits() & GAME_ROOM_EXIT_WEST_EXISTS){
+        GameGoWest();
+        UpdateAll();
+    }
+}
+
+}
 
 /**************************************************************************************************/
     while (1);
@@ -85,6 +146,31 @@ int main()
  */
 void __ISR(_TIMER_2_VECTOR, ipl4) TimerInterrupt100Hz(void)
 {
+    if(AdcChanged()) {
+        adcValue = AdcRead();
+    }
+
+    buttonEvent = ButtonsCheckEvents();
     // Clear the interrupt flag.
     IFS0CLR = 1 << 8;
 }
+
+void UpdateAll(void)
+{
+        GameGetCurrentRoomTitle(title);
+        GameGetCurrentRoomDescription(desc);
+        int length = strlen(desc);
+        int numberOfScreens = ((((length/OLED_CHARS_PER_LINE) + 1) / 4) + 2);
+        int percent = adcValue*100/1024;
+        int screenNumber = (percent*numberOfScreens)/100;
+        if(screenNumber == 1){
+            sprintf(oledScreen, oledScreenFormat1, title, desc);
+        } else {
+            sprintf(oledScreen, oledScreenFormat2, desc[OLED_CHARS_PER_LINE*screenNumber]);
+        }
+        OledClear(OLED_COLOR_BLACK);
+        OledDrawString(oledScreen);
+        OledUpdate();
+        LEDS_SET(GameGetCurrentRoomExits());
+}
+

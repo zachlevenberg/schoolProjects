@@ -1,4 +1,4 @@
-build/default/production/rpg.o:  \
+build/default/debug/rpg.o:  \
 rpg.c  \
 HardwareDefs.h  \
 Oled.h  \
