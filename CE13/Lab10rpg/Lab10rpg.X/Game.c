@@ -233,35 +233,28 @@ void GameGetInfo(int roomNumber)
     char fileName[12];
     sprintf(fileName, ROOM_TEMPLATE, roomNumber);
     FILE *fp;
-//    fp = fopen(fileName, "r");
-//    while(fgetc(fp) != EOF){
-//        continue;
-//    }
-//    fclose(fp);
-    fp = fopen(fileName, "r");
-    //fp->_cnt = 0;
 
-//    char testString[300];
-//    fread(testString, 299, 1, fp);
-
+    fp = fopen(fileName, "rb");
 
     uint8_t input;
-    bool badInput = false;
+
 
     //get title
     input = fgetc(fp);
-    //if(input == 0x45){input = 0x0c;}
+
+
+    if(input == 0x45){input = 0x0c;}
     int i = 0;
     for (i = 0; i < input; i++) {
         thisFile.title[i] = fgetc(fp);
     }
     thisFile.title[i] = NULL;
+    //fread(thisFile.title, input, 1, fp);
 
     bool fail = false;
     while (1) {
 
-        badInput = false;
-
+        input = fgetc(fp);
         for (i = 0; i < input; i++) {
             uint8_t item = fgetc(fp);
             if (!FindInInventory(item)) {

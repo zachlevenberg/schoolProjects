@@ -30,9 +30,11 @@ static char desc[GAME_MAX_ROOM_DESC_LENGTH];
 static char oledScreen[GAME_MAX_ROOM_TITLE_LENGTH + 3*(OLED_CHARS_PER_LINE + 1)];
 static char oledScreenFormat1[] = "%s\n\n\n%s";
 static char oledScreenFormat2[] = "%s";
+static bool oneHundHzFlag = 0;
 
 // **** Declare any function prototypes here ****
 void UpdateAll(void);
+void Scroll(void);
 // Configuration Bit settings
 // SYSCLK = 80 MHz (8MHz Crystal/ FPLLIDIV * FPLLMUL / FPLLODIV)
 // PBCLK = 20 MHz
@@ -92,16 +94,15 @@ LEDS_INIT();
 GameInit();
 AdcInit();
 
-GameGetCurrentRoomTitle(title);
-GameGetCurrentRoomDescription(desc);
-desc[OLED_CHARS_PER_LINE] = NULL;
-sprintf(oledScreen, oledScreenFormat1, title, desc);
-OledDrawString(oledScreen);
-OledUpdate();
-LEDS_SET(GameGetCurrentRoomExits());
+UpdateAll();
+Scroll();
 
 while(1){
-
+    if(AdcChanged() && oneHundHzFlag){
+        oneHundHzFlag = 0;
+        adcValue = AdcRead();
+        Scroll();
+    }
 
 if(buttonEvent & BUTTON_EVENT_4UP){
     buttonEvent &= ~BUTTON_EVENT_4UP;
@@ -146,10 +147,12 @@ if(buttonEvent & BUTTON_EVENT_1UP){
  */
 void __ISR(_TIMER_2_VECTOR, ipl4) TimerInterrupt100Hz(void)
 {
-    if(AdcChanged()) {
-        adcValue = AdcRead();
+    static int count = 0;
+    count++;
+    if(count == 50){
+        oneHundHzFlag = 1;
+        count = 0;
     }
-
     buttonEvent = ButtonsCheckEvents();
     // Clear the interrupt flag.
     IFS0CLR = 1 << 8;
@@ -159,18 +162,31 @@ void UpdateAll(void)
 {
         GameGetCurrentRoomTitle(title);
         GameGetCurrentRoomDescription(desc);
-        int length = strlen(desc);
-        int numberOfScreens = ((((length/OLED_CHARS_PER_LINE) + 1) / 4) + 2);
-        int percent = adcValue*100/1024;
-        int screenNumber = (percent*numberOfScreens)/100;
-        if(screenNumber == 1){
-            sprintf(oledScreen, oledScreenFormat1, title, desc);
-        } else {
-            sprintf(oledScreen, oledScreenFormat2, desc[OLED_CHARS_PER_LINE*screenNumber]);
-        }
+        sprintf(oledScreen, oledScreenFormat1, title, desc);
         OledClear(OLED_COLOR_BLACK);
         OledDrawString(oledScreen);
         OledUpdate();
         LEDS_SET(GameGetCurrentRoomExits());
 }
 
+void Scroll(void)
+{
+    int length = strlen(desc);
+    int numberOfScreens = ((((length - OLED_CHARS_PER_LINE) / OLED_CHARS_PER_LINE) / 4) + 2);
+    int percent = (adcValue * 100) / 1023;
+    int screenNumber = (1 + (percent * numberOfScreens) / 100);
+    if (screenNumber <= 1) {
+        sprintf(oledScreen, oledScreenFormat1, title, desc);
+    } else {
+        char descLine[(OLED_CHARS_PER_LINE*4) + 1];
+        int i = 0;
+        for (i = 0; i <= OLED_CHARS_PER_LINE*4; i++) {
+            descLine[i] = desc[i + OLED_CHARS_PER_LINE*(1 + 4*(screenNumber - 2))];
+        }
+        descLine[i] = NULL;
+        sprintf(oledScreen, oledScreenFormat2, descLine);
+    }
+    OledClear(OLED_COLOR_BLACK);
+    OledDrawString(oledScreen);
+    OledUpdate();
+}
